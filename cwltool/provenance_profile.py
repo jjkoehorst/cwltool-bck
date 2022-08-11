@@ -283,9 +283,9 @@ class ProvenanceProfile:
         process_run_id: Optional[str] = None,
     ) -> str:
         """Record the start of each Process."""
-        print(process.__dict__)
+        print(process)
         logger = logging.getLogger("logger")
-        _logger.error(str(process.__dict__))
+        _logger.error(str(process))
         if process_run_id is None:
             process_run_id = uuid.uuid4().urn
         prov_label = "Run of workflow/packed.cwl#main/" + process_name
