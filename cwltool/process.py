@@ -10,7 +10,7 @@ import os
 import shutil
 import stat
 import textwrap
-import urllib.parse
+import urllib
 import uuid
 from os import scandir
 from typing import (
@@ -31,7 +31,6 @@ from typing import (
     cast,
 )
 
-from cwl_utils import expression
 from pkg_resources import resource_stream
 from rdflib import Graph
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
@@ -49,6 +48,7 @@ from schema_salad.utils import convert_to_dict
 from schema_salad.validate import avro_type_name, validate_ex
 from typing_extensions import TYPE_CHECKING
 
+from . import expression
 from .builder import INPUT_OBJ_VOCAB, Builder
 from .context import LoadingContext, RuntimeContext, getdefault
 from .errors import UnsupportedRequirement, WorkflowException
@@ -263,9 +263,8 @@ def stage_files(
     fix_conflicts: bool = False,
 ) -> None:
     """Link or copy files to their targets. Create them as needed."""
-    items = pathmapper.items() if not symlink else pathmapper.items_exclude_children()
     targets = {}  # type: Dict[str, MapperEnt]
-    for key, entry in items:
+    for key, entry in pathmapper.items():
         if "File" not in entry.type:
             continue
         if entry.target not in targets:
@@ -288,7 +287,7 @@ def stage_files(
                     % (targets[entry.target].resolved, entry.resolved, entry.target)
                 )
 
-    for key, entry in items:
+    for key, entry in pathmapper.items():
         if not entry.staged:
             continue
         if not os.path.exists(os.path.dirname(entry.target)):
@@ -732,7 +731,6 @@ class Process(HasReqsHints, metaclass=abc.ABCMeta):
                     self.doc_schema.names[avroname],
                     validate_js_options,
                     self.container_engine,
-                    loadingContext.eval_timeout,
                 )
 
         dockerReq, is_req = self.get_requirement("DockerRequirement")

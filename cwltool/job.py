@@ -79,7 +79,7 @@ def relink_initialworkdir(
     container_outdir: str,
     inplace_update: bool = False,
 ) -> None:
-    for _, vol in pathmapper.items_exclude_children():
+    for _, vol in pathmapper.items():
         if not vol.staged:
             continue
 
@@ -900,7 +900,7 @@ class ContainerCommandLineJob(JobBase, metaclass=ABCMeta):
                     try:
                         os.remove(cidfile)
                     except OSError as exc:
-                        _logger.warning(
+                        _logger.warn(
                             "Ignored error cleaning up Docker cidfile: %s", exc
                         )
                     return
@@ -923,7 +923,7 @@ class ContainerCommandLineJob(JobBase, metaclass=ABCMeta):
                 process.wait()
                 stats_proc.kill()
         except OSError as exc:
-            _logger.warning("Ignored error with docker stats: %s", exc)
+            _logger.warn("Ignored error with docker stats: %s", exc)
             return
         max_mem_percent = 0  # type: float
         mem_percent = 0  # type: float
