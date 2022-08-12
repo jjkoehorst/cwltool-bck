@@ -9,16 +9,15 @@ import sys
 from io import StringIO
 from pathlib import Path
 from typing import Any, Dict, List, Union, cast
+from urllib.parse import urlparse
 
-import cwl_utils.expression as expr
 import pydot
 import pytest
-from cwl_utils.errors import JavascriptException
-from cwl_utils.sandboxjs import param_re
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from schema_salad.exceptions import ValidationException
 
 import cwltool.checker
+import cwltool.expression as expr
 import cwltool.factory
 import cwltool.pathmapper
 import cwltool.process
@@ -28,6 +27,7 @@ from cwltool.context import RuntimeContext
 from cwltool.errors import WorkflowException
 from cwltool.main import main
 from cwltool.process import CWL_IANA
+from cwltool.sandboxjs import JavascriptException
 from cwltool.utils import CWLObjectType, dedup
 
 from .util import get_data, get_main_output, needs_docker, working_directory
@@ -64,7 +64,7 @@ expression_match = [
 
 @pytest.mark.parametrize("expression,expected", expression_match)
 def test_expression_match(expression: str, expected: bool) -> None:
-    match = param_re.match(expression)
+    match = expr.param_re.match(expression)
     assert (match is not None) == expected
 
 
@@ -1077,20 +1077,19 @@ test_factors = [(""), ("--parallel"), ("--debug"), ("--parallel --debug")]
 
 
 @pytest.mark.parametrize("factor", test_factors)
-def test_js_console_cmd_line_tool(
-    factor: str, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_js_console_cmd_line_tool(factor: str) -> None:
     for test_file in ("js_output.cwl", "js_output_workflow.cwl"):
         commands = factor.split()
         commands.extend(
             ["--js-console", "--no-container", get_data("tests/wf/" + test_file)]
         )
-        error_code, _, _ = get_main_output(commands)
-        logging_output = "\n".join([record.message for record in caplog.records])
-        assert "[log] Log message" in logging_output
-        assert "[err] Error message" in logging_output
+        error_code, _, stderr = get_main_output(commands)
 
-        assert error_code == 0, logging_output
+        stderr = re.sub(r"\s\s+", " ", stderr)
+        assert "[log] Log message" in stderr
+        assert "[err] Error message" in stderr
+
+        assert error_code == 0, stderr
 
 
 @pytest.mark.parametrize("factor", test_factors)
@@ -1304,46 +1303,6 @@ def test_issue_740_fixed(tmp_path: Path, factor: str) -> None:
     stderr = re.sub(r"\s\s+", " ", stderr)
     assert "Output of job will be cached in" not in stderr
     assert error_code == 0, stderr
-
-
-@needs_docker
-@pytest.mark.parametrize("factor", test_factors)
-def test_cache_relative_paths(tmp_path: Path, factor: str) -> None:
-    """Confirm that re-running a particular workflow with caching succeeds."""
-    test_file = "secondary-files.cwl"
-    test_job_file = "secondary-files-job.yml"
-    cache_dir = str(tmp_path / "cwltool_cache")
-    commands = factor.split()
-    commands.extend(
-        [
-            "--cachedir",
-            cache_dir,
-            get_data(f"tests/{test_file}"),
-            get_data(f"tests/{test_job_file}"),
-        ]
-    )
-    error_code, _, stderr = get_main_output(commands)
-
-    stderr = re.sub(r"\s\s+", " ", stderr)
-    assert "completed success" in stderr
-    assert error_code == 0
-
-    commands = factor.split()
-    commands.extend(
-        [
-            "--cachedir",
-            cache_dir,
-            get_data(f"tests/{test_file}"),
-            get_data(f"tests/{test_job_file}"),
-        ]
-    )
-    error_code, _, stderr = get_main_output(commands)
-
-    stderr = re.sub(r"\s\s+", " ", stderr)
-    assert "Output of job will be cached in" not in stderr
-    assert error_code == 0, stderr
-
-    assert (tmp_path / "cwltool_cache" / "27903451fc1ee10c148a0bdeb845b2cf").exists()
 
 
 @needs_docker

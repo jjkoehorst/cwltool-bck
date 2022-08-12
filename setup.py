@@ -53,6 +53,7 @@ if USE_MYPYC:
         "cwltool/udocker.py",
         "cwltool/errors.py",
         "cwltool/executors.py",
+        "cwltool/expression.py",
         "cwltool/factory.py",
         "cwltool/flatten.py",
         # "cwltool/__init__.py",
@@ -68,6 +69,7 @@ if USE_MYPYC:
         "cwltool/procgenerator.py",
         # "cwltool/provenance.py",  # WritableBag is having issues
         "cwltool/resolver.py",
+        # "cwltool/sandboxjs.py",  # probably not speed critical, tests need to mock components
         "cwltool/secrets.py",
         "cwltool/singularity.py",
         "cwltool/software_requirements.py",
@@ -107,8 +109,7 @@ setup(
         "requests >= 2.6.1",  # >= 2.6.1 to workaround
         # https://github.com/ionrock/cachecontrol/issues/137
         "ruamel.yaml >= 0.15, < 0.17.22",
-        "rdflib >= 4.2.2, < 6.3.0",
-        "rdflib >= 4.2.2, < 6.0.0;python_version<='3.6'",
+        "rdflib >= 4.2.2, < 6.2.0",
         "shellescape >= 3.4.1, < 3.9",
         "schema-salad >= 8.2.20211104054942, < 9",
         "mypy-extensions",
@@ -121,7 +122,6 @@ setup(
         "pyparsing != 3.0.2",  # breaks --print-dot (pydot) https://github.com/pyparsing/pyparsing/issues/319
         "pyparsing < 3 ;python_version<='3.6'",  # breaks --print-dot (pydot)
         "argcomplete",
-        "cwl-utils >= 0.14",
     ],
     extras_require={
         "deps": ["galaxy-tool-util >= 21.1.0"],
@@ -133,9 +133,8 @@ setup(
         "pytest >= 6.2, < 7.2",
         "mock >= 2.0.0",
         "pytest-mock >= 1.10.0",
-        "pytest-httpserver",
         "arcp >= 0.2.0",
-        "rdflib-jsonld>=0.4.0, <= 0.6.1;python_version<='3.6'",
+        "rdflib-jsonld >= 0.4.0",
     ],
     entry_points={"console_scripts": ["cwltool=cwltool.main:run"]},
     zip_safe=True,

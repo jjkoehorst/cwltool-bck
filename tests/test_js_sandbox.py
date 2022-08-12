@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, List
 
 import pytest
-from cwl_utils import sandboxjs
 
+from cwltool import sandboxjs
 from cwltool.factory import Factory
 from cwltool.loghandler import _logger, configure_logging
 
@@ -28,16 +28,15 @@ _logger.setLevel(logging.DEBUG)
 
 @pytest.mark.parametrize("version,supported", node_versions)
 def test_node_version(version: str, supported: bool, mocker: Any) -> None:
-    mocked_subprocess = mocker.patch("cwl_utils.sandboxjs.subprocess")
+    mocked_subprocess = mocker.patch("cwltool.sandboxjs.subprocess")
     mocked_subprocess.check_output = mocker.Mock(return_value=version)
 
     assert sandboxjs.check_js_threshold_version("node") == supported
 
 
 def test_value_from_two_concatenated_expressions() -> None:
-    js_engine = sandboxjs.get_js_engine()
-    js_engine.have_node_slim = False  # type: ignore[attr-defined]
-    js_engine.localdata = threading.local()  # type: ignore[attr-defined]
+    sandboxjs.have_node_slim = False
+    sandboxjs.localdata = threading.local()
     factory = Factory()
     echo = factory.make(get_data("tests/wf/vf-concat.cwl"))
     file = {"class": "File", "location": get_data("tests/wf/whale.txt")}
@@ -71,9 +70,8 @@ def test_value_from_two_concatenated_expressions_podman(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Javascript test using podman."""
-    js_engine = sandboxjs.get_js_engine()
-    js_engine.have_node_slim = False  # type: ignore[attr-defined]
-    js_engine.localdata = threading.local()  # type: ignore[attr-defined]
+    sandboxjs.have_node_slim = False
+    sandboxjs.localdata = threading.local()
     new_paths = hide_nodejs(tmp_path)
     factory = Factory()
     factory.loading_context.podman = True
@@ -91,9 +89,8 @@ def test_value_from_two_concatenated_expressions_singularity(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Javascript test using Singularity."""
-    js_engine = sandboxjs.get_js_engine()
-    js_engine.have_node_slim = False  # type: ignore[attr-defined]
-    js_engine.localdata = threading.local()  # type: ignore[attr-defined]
+    sandboxjs.have_node_slim = False
+    sandboxjs.localdata = threading.local()
     new_paths = hide_nodejs(tmp_path)
     factory = Factory()
     factory.loading_context.singularity = True
@@ -109,7 +106,7 @@ def test_value_from_two_concatenated_expressions_singularity(
 def test_caches_js_processes(mocker: Any) -> None:
     sandboxjs.exec_js_process("7", context="{}")
 
-    mocked_new_js_proc = mocker.patch("cwl_utils.sandboxjs.new_js_proc")
+    mocked_new_js_proc = mocker.patch("cwltool.sandboxjs.new_js_proc")
     sandboxjs.exec_js_process("7", context="{}")
 
     mocked_new_js_proc.assert_not_called()
